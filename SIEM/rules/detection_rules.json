@@ -1,0 +1,102 @@
+{
+  "rules": [
+    {
+      "id": "T1110.001",
+      "name": "Brute-Force Login",
+      "description": "5+ failed logins from same IP for same user within 60s",
+      "severity": "HIGH",
+      "type": "auth_service",
+      "conditions": {
+        "event_type": "LOGIN_FAILED",
+        "threshold": 5,
+        "window_seconds": 60,
+        "group_by": ["source_ip", "user_id"]
+      },
+      "risk_score": 75
+    },
+    {
+      "id": "T1110.003",
+      "name": "Password Spraying",
+      "description": "6+ failed logins from same IP across 4+ users within 5m",
+      "severity": "HIGH",
+      "type": "auth_service",
+      "conditions": {
+        "event_type": "LOGIN_FAILED",
+        "threshold": 6,
+        "window_seconds": 300,
+        "group_by": ["source_ip"],
+        "distinct_users": 4
+      },
+      "risk_score": 80
+    },
+    {
+      "id": "T1078",
+      "name": "Impossible Travel",
+      "description": "2 successful logins for same user from different countries within 60m",
+      "severity": "CRITICAL",
+      "type": "auth_service",
+      "conditions": {
+        "event_type": "LOGIN_SUCCESS",
+        "threshold": 2,
+        "window_seconds": 3600,
+        "group_by": ["user_id"],
+        "require_different_countries": true
+      },
+      "risk_score": 95
+    },
+    {
+      "id": "T1595.003",
+      "name": "API Endpoint Enumeration",
+      "description": "15+ HTTP 403/404 errors from same IP within 60s",
+      "severity": "MEDIUM",
+      "type": "api_gateway",
+      "conditions": {
+        "status_codes": [403, 404],
+        "threshold": 15,
+        "window_seconds": 60,
+        "group_by": ["source_ip"]
+      },
+      "risk_score": 60
+    },
+    {
+      "id": "T1190",
+      "name": "API Payload/Injection Probe",
+      "description": "SQLi, path traversal, or JWT/IDOR patterns in API paths/params",
+      "severity": "HIGH",
+      "type": "api_gateway",
+      "conditions": {
+        "patterns": [
+          "SELECT.*FROM", "UNION.*SELECT", "DROP.*TABLE",
+          "\\.\\./", "\\.\\.\\\\",
+          "jwt\\.", "token.*tamper"
+        ],
+        "check_fields": ["path", "user_agent", "request_body"]
+      },
+      "risk_score": 85
+    },
+    {
+      "id": "T1078-T1657",
+      "name": "Multi-Stage Account Takeover",
+      "description": "Correlate brute-force/impossible-travel with high-value transfer within 15m",
+      "severity": "CRITICAL",
+      "type": "correlation",
+      "conditions": {
+        "preceding_events": ["T1110.001", "T1110.003", "T1078"],
+        "follow_up_type": "payment_engine",
+        "follow_up_condition": {
+          "amount": {"gt": 2000}
+        },
+        "time_window_seconds": 900,
+        "group_by": ["user_id"]
+      },
+      "risk_score": 98
+    }
+  ],
+  "default_cooldown_seconds": 300,
+  "risk_score_cap": 100,
+  "risk_score_decay": {
+    "enabled": true,
+    "decay_rate": 0.01,
+    "decay_interval_seconds": 3600
+  }
+}

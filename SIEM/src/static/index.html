@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fintech Mini-SIEM ENTERPRISE SOC</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* Переменные темной темы по умолчанию */
+        :root {
+            --primary: #00d9ff;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --critical: #ff4444;
+            --high: #ffaa00;
+            --medium: #ffd700;
+            --low: #4ade80;
+            --success: #22c55e;
+        }
+
+        [data-theme="light"] {
+            --bg: #f1f5f9;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --border: #cbd5e1;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .app { max-width: 100vw; padding: 0 20px; }
+
+        /* Header */
+        .nav-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .brand-icon { font-size: 24px; }
+
+        .nav-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .lang-switcher {
+            display: flex;
+            gap: 4px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 2px;
+            background: var(--bg);
+        }
+
+        .lang-btn {
+            padding: 4px 12px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 13px;
+            border-radius: 4px;
+        }
+
+        .lang-btn.active {
+            background: var(--primary);
+            color: #000;
+            font-weight: 600;
+        }
+
+        .theme-toggle {
+            width: 40px;
+            height: 24px;
+            border-radius: 12px;
+            border: none;
+            background: var(--border);
+            cursor: pointer;
+            position: relative;
+            margin-left: 8px;
+        }
+
+        .theme-toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px; left: 2px;
+            width: 20px; height: 20px;
+            border-radius: 50%;
+            background: var(--text);
+            transition: transform 0.2s;
+        }
+
+        [data-theme="light"] .theme-toggle::after {
+            transform: translateX(16px);
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: opacity 0.2s;
+        }
+
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-primary { background: var(--primary); color: #000; }
+
+        /* Tabs */
+        .tab-bar {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+            margin-bottom: 20px;
+            background: var(--card-bg);
+        }
+
+        .tab-btn {
+            padding: 14px 20px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            white-space: nowrap;
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        /* KPI */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .kpi-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px 12px;
+        }
+
+        .kpi-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 6px;
+        }
+
+        .kpi-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-top: 4px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Panels */
+        .tab-panel { display: none; animation: fadeIn 0.3s; }
+        .tab-panel.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        th {
+            background: var(--bg);
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 10px 12px;
+            text-align: left;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(0, 217, 255, 0.05); }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-critical { background: rgba(255, 68, 68, 0.15); color: var(--critical); border: 1px solid rgba(255, 68, 68, 0.3); }
+        .badge-high { background: rgba(255, 170, 0, 0.15); color: var(--high); border: 1px solid rgba(255, 170, 0, 0.3); }
+        .badge-medium { background: rgba(255, 215, 0, 0.15); color: var(--medium); border: 1px solid rgba(255, 215, 0, 0.3); }
+        .badge-low { background: rgba(74, 222, 128, 0.15); color: var(--low); border: 1px solid rgba(74, 222, 128, 0.3); }
+        .badge-new { background: rgba(0, 217, 255, 0.15); color: var(--primary); border: 1px solid rgba(0, 217, 255, 0.3); }
+        .badge-investigating { background: rgba(255, 170, 0, 0.15); color: var(--high); border: 1px solid rgba(255, 170, 0, 0.3); }
+        .badge-resolved { background: rgba(74, 222, 128, 0.15); color: var(--low); border: 1px solid rgba(74, 222, 128, 0.3); }
+
+        .btn-sm {
+            padding: 4px 10px;
+            font-size: 11px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: none;
+            margin-right: 4px;
+        }
+
+        .btn-investigate { background: var(--primary); color: #000; }
+        .btn-resolve { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+        .btn-danger { background: var(--critical); color: #fff; }
+        .btn-export { background: var(--border); color: var(--text); }
+
+        .btn-sm:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* MITRE Matrix */
+        .mitre-matrix {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .mitre-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .mitre-cell {
+            flex: 1;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            min-height: 100px;
+        }
+
+        .mitre-cell h4 {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 4px;
+        }
+
+        .mitre-alert {
+            background: rgba(0, 217, 255, 0.1);
+            border: 1px solid rgba(0, 217, 255, 0.3);
+            border-radius: 6px;
+            padding: 6px 8px;
+            margin-bottom: 6px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        .mitre-alert.critical { border-color: var(--critical); color: var(--critical); }
+        .mitre-alert.high { border-color: var(--high); color: var(--high); }
+        .mitre-alert.medium { border-color: var(--medium); color: var(--medium); }
+
+        .mitre-empty {
+            color: var(--text-muted);
+            font-size: 10px;
+            font-style: italic;
+        }
+
+        /* Chat */
+        .chat-msg { margin-bottom: 12px; padding: 10px; border-radius: 8px; background: var(--card-bg); border: 1px solid var(--border); }
+        .chat-user { border-left: 3px solid var(--primary); }
+        .chat-ai { border-left: 3px solid #d946ef; }
+
+        /* Fleet */
+        .fleet-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .device-row { cursor: pointer; }
+        .device-row:hover { background: rgba(0, 217, 255, 0.05); }
+
+        .compliant { color: var(--success); }
+        .non-compliant { color: var(--critical); }
+
+        /* Toast */
+        .toast-container { position: fixed; top: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+        .toast { padding: 10px 16px; border-radius: 8px; background: var(--card-bg); border: 1px solid var(--border); color: var(--text); font-size: 13px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); pointer-events: auto; animation: slideIn 0.3s; }
+        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        .toast.success { border-color: var(--success); }
+        .toast.warning { border-color: var(--high); }
+        .toast.error { border-color: var(--critical); }
+
+        .hidden { display: none !important; }
+
+        /* Auto-refresh indicator */
+        .refresh-indicator {
+            font-size: 10px;
+            color: var(--text-muted);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+        /* Export modal */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center; z-index: 2000;
+        }
+        .modal {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 24px;
+            min-width: 400px;
+            max-width: 90vw;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal h3 { margin-bottom: 16px; }
+        .modal .json-output {
+            background: #000;
+            color: #0f0;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .modal-actions { display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; }
+
+        .loading-spinner {
+            width: 16px; height: 16px;
+            border: 2px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <header class="nav-bar">
+            <div class="brand">
+                <div class="brand-icon">🛡️</div>
+                <span id="brand-title">Fintech Mini-SIEM <span style="font-weight:400;color:var(--text-muted)" id="brand-sub">ENTERPRISE SOC</span></span>
+            </div>
+            <div class="nav-actions">
+                <div class="lang-switcher">
+                    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+                    <button class="lang-btn" onclick="setLang('ru')">RU</button>
+                </div>
+                <button class="btn btn-primary" onclick="simulate('regenerate_random_all')">
+                    <span id="btn-random-data">New Random Data</span>
+                </button>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme"></button>
+            </div>
+        </header>
+
+        <nav class="tab-bar">
+            <button class="tab-btn active" data-tab="alerts" onclick="showTab('alerts')"><span id="tab-alerts">Alerts & Triage</span></button>
+            <button class="tab-btn" data-tab="search" onclick="showTab('search')"><span id="tab-search">Search & Analytics</span></button>
+            <button class="tab-btn" data-tab="fleet" onclick="showTab('fleet')"><span id="tab-fleet">Fleet Security</span></button>
+            <button class="tab-btn" data-tab="ai" onclick="showTab('ai')"><span id="tab-ai">SOC AI Assistant</span></button>
+            <button class="tab-btn" data-tab="incidents" onclick="showTab('incidents')"><span id="tab-incidents">Incidents</span></button>
+            <button class="tab-btn" data-tab="soar" onclick="showTab('soar')"><span id="tab-soar">SOAR Center</span></button>
+            <button class="tab-btn" data-tab="mitre" onclick="showTab('mitre')"><span id="tab-mitre">MITRE ATT&CK</span></button>
+        </nav>
+
+        <main class="main-content">
+            <div id="toastContainer" class="toast-container"></div>
+
+            <!-- KPI Row (Global) -->
+            <div class="kpi-grid">
+                <div class="kpi-card"><div class="kpi-label" id="lbl-total-events">TOTAL EVENTS</div><div class="kpi-value" id="kpi-total-events">0</div></div>
+                <div class="kpi-card"><div class="kpi-label" id="lbl-critical-alerts">CRITICAL ALERTS</div><div class="kpi-value" style="color:var(--critical)" id="kpi-critical">0</div></div>
+                <div class="kpi-card"><div class="kpi-label" id="lbl-high-alerts">HIGH ALERTS</div><div class="kpi-value" style="color:var(--high)" id="kpi-high">0</div></div>
+                <div class="kpi-card"><div class="kpi-label" id="lbl-medium-alerts">MEDIUM ALERTS</div><div class="kpi-value" style="color:var(--medium)" id="kpi-medium">0</div></div>
+                <div class="kpi-card"><div class="kpi-label" id="lbl-low-alerts">LOW ALERTS</div><div class="kpi-value" style="color:var(--low)" id="kpi-low">0</div></div>
+                <div class="kpi-card"><div class="kpi-label" id="lbl-active-incidents">ACTIVE INCIDENTS</div><div class="kpi-value" id="kpi-incidents">0</div></div>
+                <div class="kpi-card"><div class="kpi-label" id="lbl-blocked-ips">BLOCKED IPS</div><div class="kpi-value" id="kpi-blocked">0</div></div>
+                <div class="kpi-card"><div class="kpi-label" id="lbl-mean-risk">MEAN RISK</div><div class="kpi-value" id="kpi-risk">0.0</div></div>
+            </div>
+
+            <!-- Auto-refresh indicator -->
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px; font-size:11px; color:var(--text-muted);">
+                <div class="loading-spinner"></div>
+                <span id="refresh-text">Auto-refresh: ON (15s)</span>
+            </div>
+
+            <!-- Panels -->
+            <section id="panel-alerts" class="tab-panel active">
+                <div class="card">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>MITRE</th>
+                                    <th>RULE</th>
+                                    <th>SEVERITY</th>
+                                    <th>RISK</th>
+                                    <th>STATUS</th>
+                                    <th>USER</th>
+                                    <th>IP</th>
+                                    <th>ACTIONS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="alerts-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="panel-search" class="tab-panel" hidden>
+                <div class="card" style="padding:20px">
+                    <h3 id="search-title" style="margin-bottom:15px">SPL Search & Analytics</h3>
+                    <div style="display:flex;gap:10px;margin-bottom:20px">
+                        <input type="text" id="spl-query" class="input" placeholder="source_type=auth status=failed | stats count by user" style="flex:1">
+                        <button class="btn btn-primary" onclick="runSearch()"><span id="btn-search">Search</span></button>
+                    </div>
+                    <div id="search-results" class="table-container"></div>
+                </div>
+            </section>
+
+            <section id="panel-fleet" class="tab-panel" hidden>
+                <div class="card" style="padding:20px">
+                    <h3 id="fleet-title" style="margin-bottom:16px">Fleet Compliance & Security Posture</h3>
+                    <div class="fleet-grid" id="fleet-kpis"></div>
+                    <div style="overflow-x:auto">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Device</th><th>Hostname</th><th>OS</th><th>EDR</th><th>Compliance</th><th>IP</th><th>Location</th><th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fleet-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="panel-ai" class="tab-panel" hidden>
+                <div class="card" style="padding:20px; display:flex; flex-direction:column; height:500px;">
+                    <div id="ai-chat" style="flex:1; overflow:auto; margin-bottom:20px;">
+                        <div class="chat-msg chat-ai"><b id="ai-welcome">AI:</b> <span id="ai-welcome-msg">Welcome! I'm your SOC assistant. Ask me to find threats or audit logins.</span></div>
+                    </div>
+                    <div style="display:flex;gap:10px">
+                        <input type="text" id="ai-input" class="input" placeholder="Find impossible travel alerts for today" style="flex:1" onkeypress="if(event.key==='Enter') runAI()">
+                        <button class="btn btn-primary" onclick="runAI()"><span id="btn-ai-hunt">Ask AI Hunter</span></button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="panel-incidents" class="tab-panel" hidden>
+                <div class="card" style="padding:20px">
+                    <h3 id="incidents-title" style="margin-bottom:16px">Incidents</h3>
+                    <div id="incidents-list"></div>
+                </div>
+            </section>
+
+            <section id="panel-soar" class="tab-panel" hidden>
+                <div class="card" style="padding:20px">
+                    <h3 id="soar-title" style="margin-bottom:16px">SOAR Control Center</h3>
+                    <div id="soar-content"></div>
+                </div>
+            </section>
+
+            <section id="panel-mitre" class="tab-panel" hidden>
+                <div class="card" style="padding:20px">
+                    <h3 id="mitre-title" style="margin-bottom:16px">MITRE ATT&CK Matrix</h3>
+                    <p id="mitre-sub" style="color:var(--text-muted); margin-bottom:16px; font-size:13px;">Alerts mapped by MITRE ATT&CK technique. Click an alert to investigate.</p>
+                    <div class="mitre-matrix" id="mitre-matrix"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Export Modal -->
+    <div class="modal-overlay hidden" id="export-modal">
+        <div class="modal">
+            <h3 id="export-title">Export Incident Report</h3>
+            <div class="json-output" id="export-output"></div>
+            <div class="modal-actions">
+                <button class="btn" onclick="closeExportModal()" id="btn-close-modal">Close</button>
+                <button class="btn btn-primary" onclick="downloadExport()" id="btn-download">Download JSON</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ Translations (EN/RU) ============
+        const TR = {
+            en: {
+                brand: 'Fintech Mini-SIEM', sub: 'ENTERPRISE SOC',
+                tabAlerts: 'Alerts & Triage', tabSearch: 'Search & Analytics', tabFleet: 'Fleet Security',
+                tabAI: 'SOC AI Assistant', tabIncidents: 'Incidents', tabSOAR: 'SOAR Center', tabMITRE: 'MITRE ATT&CK',
+                btnRandom: 'New Random Data', btnSearch: 'Search', btnAI: 'Ask AI Hunter', btnClose: 'Close', btnDownload: 'Download JSON',
+                lblTotal: 'TOTAL EVENTS', lblCritical: 'CRITICAL ALERTS', lblHigh: 'HIGH ALERTS',
+                lblMedium: 'MEDIUM ALERTS', lblLow: 'LOW ALERTS', lblIncidents: 'ACTIVE INCIDENTS',
+                lblBlocked: 'BLOCKED IPS', lblRisk: 'MEAN RISK',
+                searchTitle: 'SPL Search & Analytics', fleetTitle: 'Fleet Compliance & Security Posture',
+                incidentsTitle: 'Incidents', soarTitle: 'SOAR Control Center', mitreTitle: 'MITRE ATT&CK Matrix',
+                aiWelcome: 'AI: ', aiWelcomeMsg: 'Welcome! I\u2019m your SOC assistant. Ask me to find threats or audit logins.',
+                exportTitle: 'Export Incident Report',
+                colID: 'ID', colMITRE: 'MITRE', colRule: 'RULE', colSeverity: 'SEVERITY', colRisk: 'RISK',
+                colStatus: 'STATUS', colUser: 'USER', colIP: 'IP', colActions: 'ACTIONS',
+                btnInvestigate: 'Investigate', btnResolve: 'Resolve', btnExport: 'Export',
+                refreshOn: 'Auto-refresh: ON (15s)',
+                toastData: 'Data Regenerated', toastAlert: 'Alert {status}', toastLang: 'Language switched',
+                toastBlocked: 'IP {ip} blocked', toastUnblocked: 'IP {ip} unblocked',
+                toastFrozen: 'Account {user} frozen', toastUnfrozen: 'Account {user} unfrozen',
+                toastExported: 'Incident exported', toastError: 'Error: {msg}',
+                mitreSub: 'Alerts mapped by MITRE ATT&CK technique. Click an alert to investigate.',
+                empty: 'No data available'
+            },
+            ru: {
+                brand: 'Fintech Mini-SIEM', sub: 'ЦОБ КОРПОРАТИВНЫЙ',
+                tabAlerts: 'Алерты и triage', tabSearch: 'Поиск и аналитика', tabFleet: 'Безопасность парка',
+                tabAI: 'SOC AI Помощник', tabIncidents: 'Инциденты', tabSOAR: 'ЦОР Центр', tabMITRE: 'MITRE ATT&CK',
+                btnRandom: 'Новые случайные данные', btnSearch: 'Поиск', btnAI: 'Спросить у ИИ Охотника', btnClose: 'Закрыть', btnDownload: 'Скачать JSON',
+                lblTotal: 'ВСЕГО СОБЫТИЙ', lblCritical: 'КРИТИЧНЫЕ АЛЕРТЫ', lblHigh: 'ВЫСОКИЕ АЛЕРТЫ',
+                lblMedium: 'СРЕДНИЕ АЛЕРТЫ', lblLow: 'НИЗКИЕ АЛЕРТЫ', lblIncidents: 'АКТИВНЫЕ ИНЦИДЕНТЫ',
+                lblBlocked: 'ЗАБЛОКИРОВАННЫЕ IP', lblRisk: 'СРЕДНИЙ РИСК',
+                searchTitle: 'SPL Поиск и аналитика', fleetTitle: 'Соответствие и понимание состояния парка',
+                incidentsTitle: 'Инциденты', soarTitle: 'Центр автоматического реагирования', mitreTitle: 'MITRE ATT&CK Матрица',
+                aiWelcome: 'ИИ: ', aiWelcomeMsg: 'Добро пожаловать! Я ваш SOC ассистент. Спросите меня о поиске угроз или аудите входов.',
+                exportTitle: 'Экспорт отчёта инцидента',
+                colID: 'ID', colMITRE: 'MITRE', colRule: 'ПРАВИЛО', colSeverity: 'ТЯЖЕСТЬ', colRisk: 'РИСК',
+                colStatus: 'СТАТУС', colUser: 'ПОЛЬЗОВАТЕЛЬ', colIP: 'IP', colActions: 'ДЕЙСТВИЯ',
+                btnInvestigate: 'Исследовать', btnResolve: 'Решить', btnExport: 'Экспорт',
+                refreshOn: 'Автообновление: ВКЛ (15с)',
+                toastData: 'Данные обновлены', toastAlert: 'Алерта {status}', toastLang: 'Язык переключён',
+                toastBlocked: 'IP {ip} заблокирован', toastUnblocked: 'IP {ip} разблокирован',
+                toastFrozen: 'Аккаунт {user} заморожен', toastUnfrozen: 'Аккаунт {user} разморожен',
+                toastExported: 'Инцидент экспортирован', toastError: 'Ошибка: {msg}',
+                mitreSub: 'Алерты отображены по методам MITRE ATT&CK. Нажмите на алерт для исследования.',
+                empty: 'Нет данных'
+            }
+        };
+
+        let lang = 'en';
+        let refreshInterval = null;
+
+        // ============ Tabs ============
+        function showTab(tab) {
+            document.querySelectorAll('.tab-panel').forEach(p => {
+                p.hidden = true;
+                p.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.tab === tab);
+            });
+            const panel = document.getElementById('panel-' + tab);
+            if (panel) {
+                panel.hidden = false;
+                panel.classList.add('active');
+            }
+            if (tab === 'alerts') { loadAlerts(); loadStats(); }
+            if (tab === 'search') { loadStats(); }
+            if (tab === 'fleet') loadFleet();
+            if (tab === 'ai') { /* chat готов */ }
+            if (tab === 'incidents') loadIncidents();
+            if (tab === 'soar') loadSOAR();
+            if (tab === 'mitre') loadMITRE();
+        }
+
+        // ============ i18n ============
+        function t(key, params) {
+            let s = TR[lang][key] || key;
+            if (params) {
+                Object.entries(params).forEach(([k, v]) => { s = s.replace(new RegExp('{' + k + '}', 'g'), v); });
+            }
+            return s;
+        }
+
+        function applyLang() {
+            document.getElementById('brand-title').innerHTML = t('brand') + ' <span style="font-weight:400;color:var(--text-muted)">' + t('sub') + '</span>';
+            document.getElementById('tab-alerts').textContent = t('tabAlerts');
+            document.getElementById('tab-search').textContent = t('tabSearch');
+            document.getElementById('tab-fleet').textContent = t('tabFleet');
+            document.getElementById('tab-ai').textContent = t('tabAI');
+            document.getElementById('tab-incidents').textContent = t('tabIncidents');
+            document.getElementById('tab-soar').textContent = t('tabSOAR');
+            document.getElementById('tab-mitre').textContent = t('tabMITRE');
+            document.getElementById('btn-random-data').textContent = t('btnRandom');
+            document.getElementById('lbl-total-events').textContent = t('lblTotal');
+            document.getElementById('lbl-critical-alerts').textContent = t('lblCritical');
+            document.getElementById('lbl-high-alerts').textContent = t('lblHigh');
+            document.getElementById('lbl-medium-alerts').textContent = t('lblMedium');
+            document.getElementById('lbl-low-alerts').textContent = t('lblLow');
+            document.getElementById('lbl-active-incidents').textContent = t('lblIncidents');
+            document.getElementById('lbl-blocked-ips').textContent = t('lblBlocked');
+            document.getElementById('lbl-mean-risk').textContent = t('lblRisk');
+            document.getElementById('search-title').textContent = t('searchTitle');
+            document.getElementById('fleet-title').textContent = t('fleetTitle');
+            document.getElementById('incidents-title').textContent = t('incidentsTitle');
+            document.getElementById('soar-title').textContent = t('soarTitle');
+            document.getElementById('mitre-title').textContent = t('mitreTitle');
+            document.getElementById('ai-welcome').textContent = t('aiWelcome');
+            document.getElementById('ai-welcome-msg').textContent = t('aiWelcomeMsg');
+            document.getElementById('export-title').textContent = t('exportTitle');
+            document.getElementById('mitre-sub').textContent = t('mitreSub');
+            document.getElementById('btn-close-modal').textContent = t('btnClose');
+            document.getElementById('btn-download').textContent = t('btnDownload');
+            document.getElementById('refresh-text').textContent = t('refreshOn');
+
+            document.querySelectorAll('.lang-btn').forEach(b => {
+                b.classList.toggle('active', b.onclick.toString().includes("'"+lang+"'"));
+            });
+
+            loadStats();
+            loadAlerts();
+            loadIncidents();
+            loadSOAR();
+            loadFleet();
+            loadMITRE();
+        }
+
+        function setLang(l) {
+            lang = l;
+            applyLang();
+            showToast(t('toastLang'));
+        }
+
+        // ============ Theme ============
+        function toggleTheme() {
+            const html = document.documentElement;
+            const isDark = html.getAttribute('data-theme') !== 'light';
+            html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+        }
+
+        // ============ API helpers ============
+        async function fetchData(url, options = {}) {
+            const r = await fetch(url, options);
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+        }
+
+        function showToast(msg, type = 'info') {
+            const c = document.getElementById('toastContainer');
+            const t = document.createElement('div');
+            t.className = 'toast ' + type;
+            t.innerHTML = '<span>' + msg + '</span>';
+            c.appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        }
+
+        // ============ Stats ============
+        async function loadStats() {
+            try {
+                const s = await fetchData('/api/stats');
+                document.getElementById('kpi-total-events').innerText = s.total_events;
+                document.getElementById('kpi-critical').innerText = s.critical_alerts;
+                document.getElementById('kpi-high').innerText = s.high_alerts;
+                document.getElementById('kpi-medium').innerText = s.medium_alerts;
+                document.getElementById('kpi-low').innerText = s.low_alerts;
+                document.getElementById('kpi-incidents').innerText = s.active_incidents;
+                document.getElementById('kpi-blocked').innerText = s.blocked_ips;
+                document.getElementById('kpi-risk').innerText = s.mean_risk_score;
+            } catch (e) {
+                showToast(t('toastError', { msg: e.message }), 'error');
+            }
+        }
+
+        // ============ Alerts ============
+        async function loadAlerts() {
+            try {
+                const alerts = await fetchData('/api/alerts');
+                const body = document.getElementById('alerts-body');
+                body.innerHTML = alerts.map(a => `
+                    <tr>
+                        <td style="color:var(--text-muted)">${(a.id || '').substring(0, 8)}...</td>
+                        <td><code style="color:var(--primary)">${a.mitre_id || '-'}</code></td>
+                        <td>${a.title || '-'}</td>
+                        <td><span class="badge badge-${(a.severity || 'low').toLowerCase()}">${a.severity || '-'}</span></td>
+                        <td style="font-family:monospace">${a.risk_score || 0}</td>
+                        <td><span class="badge badge-${(a.status || 'new').toLowerCase()}">${a.status || '-'}</span></td>
+                        <td>${a.user_id || '-'}</td>
+                        <td>${a.source_ip || '-'}</td>
+                        <td>
+                            <button class="btn-sm btn-investigate" onclick="triage('${(a.id || '').replace(/'/g, "\\'")}', 'INVESTIGATING')">${t('btnInvestigate')}</button>
+                            <button class="btn-sm btn-resolve" onclick="triage('${(a.id || '').replace(/'/g, "\\'")}', 'RESOLVED')">${t('btnResolve')}</button>
+                            <button class="btn-sm btn-export" onclick="exportIncidentAlert('${(a.id || '').replace(/'/g, "\\'")}')">${t('btnExport')}</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                showToast(t('toastError', { msg: e.message }), 'error');
+            }
+        }
+
+        async function triage(id, status) {
+            try {
+                await fetch(`/api/triage/${id}?status=${encodeURIComponent(status)}`, { method: 'POST' });
+                showToast(t('toastAlert', { status: status }), 'success');
+                loadAlerts();
+                loadStats();
+                loadMITRE();
+            } catch (e) {
+                showToast(t('toastError', { msg: e.message }), 'error');
+            }
+        }
+
+        // ============ Incidents ============
+        async function loadIncidents() {
+            try {
+                const incidents = await fetchData('/api/incidents');
+                const container = document.getElementById('incidents-list');
+                if (!incidents || incidents.length === 0) {
+                    container.innerHTML = '<p style="color:var(--text-muted)">' + t('empty') + '</p>';
+                    return;
+                }
+                container.innerHTML = incidents.map(inc => `
+                    <div class="card" style="margin-bottom:12px">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start">
+                            <div>
+                                <div style="font-weight:600">${inc.title || 'Incident'}</div>
+                                <div style="font-size:11px; color:var(--text-muted)">${inc.id} · ${inc.severity || '-'} · ${inc.summary || ''}</div>
+                            </div>
+                            <div style="display:flex; gap:8px; align-items:center">
+                                <button class="btn-sm btn-primary" onclick="exportIncident('${inc.id}')">${t('btnExport')}</button>
+                                ${inc.resolved_at ? '<span class="badge badge-resolved">Resolved</span>' : '<span class="badge badge-new">Active</span>'}
+                            </div>
+                        </div>
+                        <div style="margin-top:8px; font-size:12px; color:var(--text-muted)">
+                            Timeline: ${(inc.timeline || []).length} steps · Alerts: ${(inc.alerts || []).length}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                showToast(t('toastError', { msg: e.message }), 'error');
+            }
+        }
+
+        // ============ Export ============
+        async function exportIncident(incidentId) {
+            try {
+                const data = await fetchData(`/api/export?incident_id=${encodeURIComponent(incidentId)}&format=json`);
+                document.getElementById('export-output').textContent = JSON.stringify(data, null, 2);
+                document.getElementById('export-modal').classList.remove('hidden');
+                window._lastExport = data;
+                showToast(t('toastExported'), 'success');
+            } catch (e) {
+                showToast(t('toastError', { msg: e.message }), 'error');
+            }
+        }
+
+        async function exportIncidentAlert(alertId) {
+            // Find the incident containing this alert by checking incidents list
+            try {
+                const incidents = await fetchData('/api/incidents');
+                const inc = incidents.find(i => (i.alerts || []).includes(alertId));
+                if (inc) {
+                    exportIncident(inc.id);
+                } else {
+                    showToast('No incident found for this alert', 'warning');
+                }
+            } catch (e) {
+                showToast(t('toastError', { msg: e.message }), 'error');
+            }
+        }
+
+        function closeExportModal() {
+            document.getElementById('export-modal').classList.add('hidden');
+        }
+
+        function downloadExport() {
+            if (!window._lastExport) return;
+            const blob = new Blob([JSON.stringify(window._lastExport, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'incident-' + (window._lastExport.incident_id || 'export') + '.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            closeExportModal();
+        }
+
+        // ============ SOAR ============
+        async function loadSOAR() {
+            try {
+                const data = await fetchData('/api/soar');
+                const content = document.getElementById('soar-content');
+                const blockedList = (data.blocked_ips || []).map(ip => `<li>${ip.ip} - ${ip.reason}</li>`).join('');
+                const actions = (data.audit_log || []).map(l => `
+                    <tr>
+                        <td>${l.timestamp || ''}</td>
+                        <td>${l.action_type || l.action || '-'}</td>
+                        <td>${l.target || '-'}</td>
+                        <td>${l.reason || '-'}</td>
+                        <td>${l.performed_by || '-'}</td>
+                    </tr>
+                `).join('');
+                content.innerHTML = `
+                    <div style="display:flex; gap:24px">
+                        <div style="flex:1">
+                            <h4 style="margin-bottom:8px">Blocked IPs</h4>
+                            <ul>${blockedList || '<li style="color:var(--text-muted)">None</li>'}</ul>
+                            <div style="margin-top:12px">
+                                <input type="text" id="block-ip-input" class="input" placeholder="IP address" style="width:140px; margin-right:8px">
+                                <input type="text" id="block-reason" class="input" placeholder="Reason" style="width:180px; margin-right:8px">
+                                <button class="btn btn-danger" onclick="blockIP()">${t('btnInvestigate')}</button>
+                            </div>
+                        </div>
+                        <div style="flex:1">
+                            <h4 style="margin-bottom:8px">Recent Actions</h4>
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr><th>Time</th><th>Action</th><th>Target</th><th>Reason</th><th>By</th></tr>
+                                    </thead>
+                                    <tbody>${actions || '<tr><td colspan="5" style="color:var(--text-muted)">None</td></tr>'}</tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (e) {
+                showToast(t('toastError', { msg: e.message }), 'error');
+            }
+        }
+
+        async function blockIP() {
+            const ip = document.getElementById('block-ip-input').value;
+            const reason = document.getElementById('block-reason').value || 'Manual block';
+            if (!ip) { showToast('IP required', 'warning'); return; }
+            try {
+                const res = await fetch(`/api/block-ip?ip=${encodeURIComponent(ip)}&reason=${encodeURIComponent(reason)}&performed_by=analyst`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(t('toastBlocked', { ip: ip }), 'success');
+                    document.getElementById('block-ip-input').value = '';
+                    document.getElementById('block-reason').value = '';
+                    loadSOAR();
+                    loadStats();
+                } else {
+                    showToast(t('toastError', { msg: data.error || 'Block failed' }), 'error');
+                }
+            } catch (e) {
+                showToast(t('toastError', { msg: e.message }), 'error');
+            }
+        }
+
+        // ============ Fleet ============
+        async function loadFleet() {
+            try {
+                const f = await fetchData('/api/fleet');
+                const content = document.getElementById('fleet-content');
+                const kpis = document.getElementById('fleet-kpis');
+                kpis.innerHTML = `
+                    <div class="kpi-card"><div class="kpi-label">Devices</div><div class="kpi-value" style="color:var(--primary)">${f.total_devices || 0}</div></div>
+                    <div class="kpi-card"><div class="kpi-label">Compliant</div><div class="kpi-value" style="color:var(--low)">${f.compliant_devices || 0}</div></div>
+                    <div class="kpi-card"><div class="kpi-label">Non-Compliant</div><div class="kpi-value" style="color:var(--critical)">${f.non_compliant_devices || 0}</div></div>
+                    <div class="kpi-card"><div class="kpi-label">Isolated</div><div class="kpi-value" style="color:var(--critical)">${f.isolated_devices || 0}</div></div>
+                `;
+                const body = document.getElementById('fleet-body');
+                const devices = f.devices || [];
+                body.innerHTML = devices.map(d => `
+                    <tr class="device-row">
+                        <td><code>${d.device_id || '-'}</code></td>
+                        <td>${d.hostname || '-'}</td>
+                        <td>${d.os_name || '-'}</td>
+                        <td><span class="badge ${d.edr_status === 'Active' ? 'badge-low' : 'badge-critical'}">${d.edr_status || '-'}</span></td>
+                        <td><span class="badge ${d.compliance_status === 'Compliant' ? 'badge-low' : 'badge-critical'}">${d.compliance_status || '-'}</span></td>
+                        <td>${d.ip_address || '-'}</td>
+                        <td>${d.city || '-'}, ${d.country || '-'}</td>
+                        <td>
+                            ${d.compliance_status !== 'Compliant' ? `<button class="btn-sm btn-danger" onclick="isolateDevice('${d.device_id}')">Isolate</button>` : '<span style="color:var(--text-muted)">-</span>'}
+                        </td>
+                    </tr>
+                `).join('');
+                if (devices.length === 0) {
+                    body.innerHTML = '<tr><td colspan="8" style="color:var(--text-muted); text-align:center">' + t('empty') + '</td></tr>';
+                }
+            } catch (e) {
+                showToast(t('toastError', { msg: e.message }), 'error');
+            }
+        }
+
+        async function isolateDevice(deviceId) {
+            try {
+                await fetch(`/api/soar/isolate?device_id=${encodeURIComponent(deviceId)}&performed_by=analyst`, { method: 'POST' });
+                showToast('Device ' + deviceId + ' isolated', 'success');
+                loadFleet();
+            } catch (e) {
+                showToast(t('toastError', { msg: e.message }), 'error');
+            }
+        }
+
+        // ============ MITRE Matrix ============
+        async function loadMITRE() {
+            try {
+                const alerts = await fetchData('/api/alerts');
+                const matrix = document.getElementById('mitre-matrix');
+                // MITRE tactics in order
+                const tactics = [
+                    { id: 'TA0001', name: 'Reconnaissance', techniques: ['T1595.003', 'T1190'] },
+                    { id: 'TA0002', name: 'Resource Development', techniques: [] },
+                    { id: 'TA0003', name: 'Initial Access', techniques: ['T1110.001', 'T1110.003'] },
+                    { id: 'TA0004', name: 'Execution', techniques: [] },
+                    { id: 'TA0005', name: 'Persistence', techniques: [] },
+                    { id: 'TA0006', name: 'Privilege Escalation', techniques: [] },
+                    { id: 'TA0007', name: 'Defense Evasion', techniques: [] },
+                    { id: 'TA0008', name: 'Credential Access', techniques: ['T1110.001', 'T1110.003'] },
+                    { id: 'TA0009', name: 'Discovery', techniques: [] },
+                    { id: 'TA0010', name: 'Lateral Movement', techniques: ['T1078'] },
+                    { id: 'TA0011', name: 'Collection', techniques: [] },
+                    { id: 'TA0012', name: 'Command and Control', techniques: [] },
+                    { id: 'TA0040', name: 'Impact', techniques: ['T1078-T1657'] }
+                ];
+
+                // Group alerts by mitre_id
+                const byTech = {};
+                (alerts || []).forEach(a => {
+                    const mid = a.mitre_id;
+                    if (!byTech[mid]) byTech[mid] = [];
+                    byTech[mid].push(a);
+                });
+
+                let html = '';
+                tactics.forEach(tac => {
+                    html += `<div class="mitre-row">`;
+                    tac.techniques.forEach(techId => {
+                        const techAlerts = byTech[techId] || [];
+                        html += `<div class="mitre-cell">
+                            <h4>${techId}</h4>
+                            ${techAlerts.length === 0 ? '<div class="mitre-empty">No alerts</div>' : techAlerts.map(a => `
+                                <div class="mitre-alert ${(a.severity||'low').toLowerCase()}" onclick="triage('${(a.id||'').replace(/'/g,"\\'")}', 'INVESTIGATING')">
+                                    ${(a.title||'Alert').substring(0,40)} <span style="opacity:0.7">${a.severity||'-'}</span>
+                                </div>
+                            `).join('')}
+                        </div>`;
+                    });
+                    html += `</div>`;
+                });
+                if (html === '') html = '<p style="color:var(--text-muted)">' + t('empty') + '</p>';
+                matrix.innerHTML = html;
+            } catch (e) {
+                showToast(t('toastError', { msg: e.message }), 'error');
+            }
+        }
+
+        // ============ Search ============
+        async function runSearch() {
+            const q = document.getElementById('spl-query').value;
+            if (!q) return;
+            try {
+                const res = await fetchData('/api/ai-hunt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: q, lang })
+                });
+                const results = res.findings || [];
+                const container = document.getElementById('search-results');
+                if (results.length === 0) {
+                    container.innerHTML = '<p style="color:var(--text-muted); padding:20px">' + t('empty') + '</p>';
+                    return;
+                }
+                container.innerHTML = `
+                    <table>
+                        <thead><tr><th>ID</th><th>Type</th><th>Source IP</th><th>User</th><th>Country</th><th>Status</th></tr></thead>
+                        <tbody>
+                            ${results.map(e => `
+                                <tr>
+                                    <td>${(e.id||'').substring(0,8)}...</td>
+                                    <td>${e.log_type||'-'}</td>
+                                    <td>${e.source_ip||'-'}</td>
+                                    <td>${e.user_id||'-'}</td>
+                                    <td>${e.country||'-'}</td>
+                                    <td>${e.status_code||'-'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (e) {
+                showToast(t('toastError', { msg: e.message }), 'error');
+            }
+        }
+
+        // ============ AI ============
+        async function runAI() {
+            const input = document.getElementById('ai-input');
+            const prompt = input.value;
+            if (!prompt) return;
+            const chat = document.getElementById('ai-chat');
+            chat.innerHTML += `<div class="chat-msg chat-user"><b>You:</b> ${prompt}</div>`;
+            input.value = '';
+            try {
+                const res = await fetchData('/api/ai-hunt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt, lang })
+                });
+                chat.innerHTML += `<div class="chat-msg chat-ai">
+                    <b>AI Hunter:</b> ${res.summary}<br>
+                    <code style="display:block; background:#000; padding:5px; margin-top:5px;">${res.spl}</code>
+                    <div style="margin-top:10px; font-size:11px; color:var(--text-muted)">Findings: ${res.findings.length} events found.</div>
+                </div>`;
+            } catch (e) {
+                chat.innerHTML += `<div class="chat-msg chat-ai"><b>AI Hunter:</b> Error: ${e.message}</div>`;
+            }
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        // ============ Simulate ============
+        async function simulate(scenario) {
+            showToast('Simulating attack...', 'warning');
+            try {
+                await fetch('/api/simulate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ scenario })
+                });
+                setTimeout(() => {
+                    loadStats();
+                    loadAlerts();
+                    loadIncidents();
+                    loadSOAR();
+                    loadFleet();
+                    loadMITRE();
+                    showToast(t('toastData'), 'success');
+                }, 1000);
+            } catch (e) {
+                showToast(t('toastError', { msg: e.message }), 'error');
+            }
+        }
+
+        // ============ Init ============
+        let autoRefreshEnabled = true;
+        function startAutoRefresh() {
+            if (refreshInterval) clearInterval(refreshInterval);
+            refreshInterval = setInterval(() => {
+                if (autoRefreshEnabled) {
+                    loadStats();
+                    loadAlerts();
+                    if (document.getElementById('panel-soar').hidden === false) loadSOAR();
+                    if (document.getElementById('panel-fleet').hidden === false) loadFleet();
+                    if (document.getElementById('panel-mitre').hidden === false) loadMITRE();
+                }
+            }, 15000);
+        }
+
+        window.onload = () => {
+            loadStats();
+            loadAlerts();
+            startAutoRefresh();
+        };
+    </script>
+</body>
+</html>

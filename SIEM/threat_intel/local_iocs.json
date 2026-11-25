@@ -1,0 +1,30 @@
+{
+  "malicious_ips": [
+    "198.51.100.10", "198.51.100.20", "198.51.100.30", "203.0.113.50",
+    "192.0.2.100", "192.0.2.101", "192.0.2.102"
+  ],
+  "tor_exit_nodes": [
+    "192.0.2.50", "203.0.113.100", "198.51.100.200",
+    "192.0.2.150", "203.0.113.150"
+  ],
+  "datacenter_ranges": [
+    "13.107.0.0/16", "52.0.0.0/8", "34.0.0.0/8", "35.0.0.0/8",
+    "52.95.0.0/16", "52.100.0.0/16", "52.110.0.0/16"
+  ],
+  "suspicious_user_agents": [
+    "sqlmap", "nikto", "gobuster", "nmap", "masscan",
+    "zap", "burp", "dirbuster", "wfuzz", "ffuf",
+    "python-requests", "curl", "wget", "libwww-perl",
+    "java/", "curl/", "python-urllib"
+  ],
+  "suspicious_asns": [
+    "AS13335", "AS16509", "AS14061", "AS8075"
+  ],
+  "disposable_email_domains": [
+    "10minutemail.com", "tempmail.org", "guerrillamail.com",
+    "mailinator.com", "yopmail.com", "trashmail.com"
+  ],
+  "suspicious_card_bins": [
+    "411111", "422222", "433333", "511111", "521111"
+  ]
+}
